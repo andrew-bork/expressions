@@ -9,7 +9,13 @@ const imag = (n) => {
 const comp = (r = 0, i = 0) => {
     return { r: r, i: i };
 }
+const eql = (a, b) => {
+    return zero(sub(a, b));
+}
 
+const zero = (a) => {
+    return a.r > -error && r.x < error && a.i > -error && a.i < error;
+}
 const add = (a, b) => {
     return { r: a.r + b.r, i: a.i + b.i };
 }
@@ -100,5 +106,6 @@ module.exports = {
         imag: imag,
         string: string,
         abs: abs,
+        eql: eql,
     }
 };

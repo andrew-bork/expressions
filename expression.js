@@ -1,10 +1,10 @@
 /**
  * 
  * @typedef {BinaryExpression|ConstantExpression|FunctionExpression|VariableExpression} Expression
- * @typedef {{type: 0|1|2|3|4, l: Expression, r: Expression}} BinaryExpression
+ * @typedef {{type: 0|1|2|3|4|8, l: Expression, r: Expression}} BinaryExpression
  * @typedef {{type: 5, funct: ExpressionFunction, param: Expression}} FunctionExpression
  * @typedef {{type: 6, valType:0|1|2, val: number}} ConstantExpression
- * @typedef {{type: 7}} VariableExpression
+ * @typedef {{type: 7, name: string}} VariableExpression
  * @typedef {{type:0, evaluate: (val:ConstantExpression) => ConstantExpression}} ExpressionFunction
  * 
  * 
@@ -24,6 +24,7 @@ const types = {
     func: 5,
     const: 6,
     var: 7,
+    equ: 8,
 }
 const valTypes = {
     num: 0,
@@ -40,7 +41,7 @@ const isWord = (string) => {
 }
 
 const tokenize = (source) => {
-    regex = (/\"[^\"]*\"|\+(\+|=){0,1}|-|\||\/|\*|\)|\^|\(|-|{|}|;|<|>|(\d*\.\d+)|\d+|[A-Za-z]+|,/g);
+    regex = (/\"[^\"]*\"|\+(\+|=){0,1}|-|\||\/|\*|\)|\^|\(|-|{|}|;|<|>|(\d*\.\d+)|\d+|[A-Za-z]+|,|=/g);
     return source.match(regex);
 }
 
@@ -59,6 +60,7 @@ const vec = (val) => {
 var functions = {
     sin: {
         name: "sin",
+        inv: "asin",
         type: 0,
         evaluate: (value) => {
             return num(Math.sin(value.val.r));
@@ -66,6 +68,7 @@ var functions = {
     },
     cos: {
         name: "cos",
+        inv: "acos",
         type: 0,
         evaluate: (value) => {
             return num(Math.cos(value.val.r));
@@ -73,6 +76,7 @@ var functions = {
     },
     tan: {
         name: "tan",
+        inv: "atan",
         type: 0,
         evaluate: (value) => {
             return num(Math.tan(value.val.r));
@@ -80,6 +84,7 @@ var functions = {
     },
     abs: {
         name: "abs",
+        inv: "plusmin",
         type: 0,
         evaluate: (value) => {
             return num(math.complex.abs(value.val));
@@ -259,6 +264,16 @@ const parse = (tokens) => {
         if (first === "i") {
             return num(0, 1);
         }
+        if (first.length > 0) {
+            return {
+                type: types.mul,
+                l: {
+                    type: types.var,
+                    name: first[0],
+                },
+                r: (first.length == 1 ? num(1) : parse([first.slice(1)])),
+            }
+        }
     }
     const second = tokens[1];
     if (isNumber(first)) {
@@ -390,6 +405,17 @@ const parse = (tokens) => {
             l: num(0, 1),
             r: parse(tokens.slice(1))
         };
+    }
+
+    if (first.length > 0) {
+        return {
+            type: types.mul,
+            l: {
+                type: types.var,
+                name: first[0],
+            },
+            r: (first.length == 1 ? parse(tokens.slice(1)) : parse([first.slice(1)].concat(tokens.slice(1)))),
+        }
     }
 }
 
@@ -524,7 +550,7 @@ const string = (expression, precesdence = 0) => {
         case types.func:
             return `${expression.funct.name}(${string(expression.param)})`;
         case types.var:
-            return ``;
+            return `${expression.name}`;
         case types.const:
             switch (expression.valType) {
                 case valTypes.num:
@@ -542,6 +568,8 @@ const string = (expression, precesdence = 0) => {
                     break;
             }
             break;
+        case types.equ:
+            return `${string(expression.l)} = ${string(expression.r)}`;
     }
     return out;
 }
@@ -551,7 +579,49 @@ const string = (expression, precesdence = 0) => {
  * @param {[String]} tokens 
  */
 const parseEquation = (tokens) => {
-    tokens.findIndex((e) => { return e === "="; });
+    var i = tokens.findIndex((e) => { return e === "="; });
+
+    const front = parse(tokens.slice(0, i));
+
+
+    const expression = parse(tokens.slice(i + 1));
+
+    return {
+        type: types.equ,
+        l: front,
+        r: expression,
+    }
+}
+
+
+/**
+ * 
+ * @param {Expression} expression
+ * @returns {Expression}
+ */
+const clean = (expression) => {
+    switch (expression.type) {
+        case types.add:
+        case types.sub:
+        case types.mul:
+        case types.div:
+        case types.var:
+        case types.func:
+        case types.exp:
+            const l = clean(expression.l);
+            const r = clean(expression.r);
+
+
+
+        case types.equ:
+            return {
+                type: types.equ,
+                l: clean(expression.l),
+                r: clean(expression.r),
+            }
+        case types.const:
+            return expression;
+    }
 }
 
 module.exports = {
