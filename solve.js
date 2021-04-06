@@ -12,7 +12,7 @@
  * 
  */
 
-const { types, valTypes, parse, tokenize, evaluate, string } = require("./expression");
+const { types, valTypes, parse, tokenize, evaluate, string, clean } = require("./expression");
 
 /**
  * 
@@ -24,3 +24,35 @@ const solve = (equation) => {
     equation.l;
     equation.r;
 }
+
+const findUnknowns = (expression, variables) => {
+    const knowns = Object.keys(variables);
+    const unknowns = [];
+
+    const search = (e) => {
+        switch (e.type) {
+            case types.add:
+            case types.sub:
+            case types.mul:
+            case types.div:
+            case types.exp:
+            case types.equ:
+                search(e.l);
+                search(e.r);
+                break;
+            case types.func:
+                search(e.param);
+                break;
+            case types.var:
+                if (knowns.find(b => b === e.name) == null && unknowns.find(b => b === e.name) == null) {
+                    unknowns.push(e.name);
+                }
+            case types.const:
+        }
+    }
+    search(expression);
+    console.log(unknowns);
+}
+
+
+console.log(findUnknowns(parse("(x+y)/y"), { y: 0 }));

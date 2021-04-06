@@ -14,7 +14,7 @@ const eql = (a, b) => {
 }
 
 const zero = (a) => {
-    return a.r > -error && r.x < error && a.i > -error && a.i < error;
+    return a.r > -error && a.r < error && a.i > -error && a.i < error;
 }
 const add = (a, b) => {
     return { r: a.r + b.r, i: a.i + b.i };
@@ -107,5 +107,6 @@ module.exports = {
         string: string,
         abs: abs,
         eql: eql,
+        zero: zero,
     }
 };

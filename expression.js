@@ -600,19 +600,115 @@ const parseEquation = (tokens) => {
  * @returns {Expression}
  */
 const clean = (expression) => {
+    var l, r, lc, rc;
     switch (expression.type) {
         case types.add:
+            l = clean(expression.l);
+            r = clean(expression.r);
+            lc = l.type === types.const;
+            rc = r.type === types.const;
+            if (rc && math.complex.zero(r.val)) {
+                return l;
+            }
+            if (lc && math.complex.zero(l.val)) {
+                return r;
+            }
+
+            return {
+                type: types.add,
+                l: l,
+                r: r,
+            }
         case types.sub:
+            l = clean(expression.l);
+            r = clean(expression.r);
+            lc = l.type === types.const;
+            rc = r.type === types.const;
+            if (rc && math.complex.zero(r.val)) {
+                return l;
+            }
+            if (lc && math.complex.zero(l.val)) {
+                return {
+                    type: types.mul,
+                    l: num(-1),
+                    r: r,
+                };
+            }
+
+            return {
+                type: types.sub,
+                l: l,
+                r: r,
+            }
         case types.mul:
+            l = clean(expression.l);
+            r = clean(expression.r);
+            lc = l.type === types.const;
+            rc = r.type === types.const;
+            if (rc && math.complex.zero(r.val)) {
+                return num(0);
+            }
+            if (lc && math.complex.zero(l.val)) {
+                return num(0);
+            }
+            if (rc && math.complex.eql(r.val, math.complex.real(1))) {
+                return l;
+            }
+            if (lc && math.complex.eql(l.val, math.complex.real(1))) {
+                return r;
+            }
+
+
+            return {
+                type: types.mul,
+                l: l,
+                r: r,
+            }
         case types.div:
+            l = clean(expression.l);
+            r = clean(expression.r);
+            lc = l.type === types.const;
+            rc = r.type === types.const;
+            if (rc && math.complex.zero(r.val)) {
+                return num(NaN);
+            }
+            if (lc && math.complex.zero(l.val)) {
+                return num(0);
+            }
+            if (rc && math.complex.eql(r.val, math.complex.real(1))) {
+                return l;
+            }
+
+
+            return {
+                type: types.div,
+                l: l,
+                r: r,
+            }
         case types.var:
+            return expression;
         case types.func:
+            expression.param = clean(expression.param);
+            return expression;
         case types.exp:
-            const l = clean(expression.l);
-            const r = clean(expression.r);
+            l = clean(expression.l);
+            r = clean(expression.r);
+            lc = l.type === types.const;
+            rc = r.type === types.const;
+            if (lc && math.complex.eql(l.val, math.complex.real(1))) {
+                return num(1);
+            } else if (lc && math.complex.zero(l.val)) {
+                if (rc && math.complex.zero(r.val)) {
+                    return num(NaN);
+                }
+                return num(0);
+            }
 
-
-
+            return {
+                type: types.exp,
+                l: l,
+                r: r,
+            }
         case types.equ:
             return {
                 type: types.equ,
@@ -622,6 +718,17 @@ const clean = (expression) => {
         case types.const:
             return expression;
     }
+}
+
+/**
+ * 
+ * @param {Expression} a 
+ * @param {Expression} b 
+ */
+const equal = (a, b) => {
+    if(a.type != b.type) return false;
+
+    
 }
 
 module.exports = {
@@ -636,5 +743,6 @@ module.exports = {
     evaluate: (source) => {
         return evaluate(parse(tokenize(source)));
     },
+    clean: clean,
     string: string,
 };
