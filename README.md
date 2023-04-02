@@ -1,2 +1,25 @@
-# expressions
-IDK this thing is a node module for expressions. I want to simplify them but thats hard so it currently solves them only.
+
+# Expressions
+
+An attempt at algorithmic simplification. Written in Javascript.
+
+## Run Locally
+
+Clone the project
+
+```bash
+  git clone https://github.com/andrew-bork/expressions
+```
+
+Go to the project directory
+
+```bash
+  cd expressions
+```
+
+Run
+
+```bash
+  node test/test.js
+```
+
